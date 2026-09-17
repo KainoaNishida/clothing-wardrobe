@@ -2,187 +2,296 @@
 
 ## Purpose
 
-This contract defines the recommended technical architecture for version 1 of the clothing wardrobe app.
+This contract defines the technical architecture direction for version 1 of the clothing wardrobe app.
 
-The goal is to choose a build shape that supports the product's hardest requirements without prematurely optimizing for future features:
+The current architectural goal is to prove the hardest product thesis first: a private, local wardrobe app with a body-aware mannequin that can represent the user's proportions credibly enough to make outfit previewing useful.
 
-- Private user accounts and sensitive body data.
-- Desktop-first wardrobe and outfit building.
-- A body-aware 3D mannequin.
-- Clothing photo uploads and product-link imports.
-- AI-assisted metadata and measurement extraction.
-- Future mobile support.
-- Future outfit and shopping recommendations.
+## Accepted Architecture Direction
 
-## Research Summary
+The following decisions are accepted for the first prototype:
 
-Research looked at five architecture families:
+- Build a desktop shell first, not a web-first app.
+- Start as a local single-user app.
+- Keep all user wardrobe data, body measurements, and uploaded images private on the user's machine in the first prototype.
+- Use a React and TypeScript interface embedded in the desktop shell.
+- Use Three.js through React Three Fiber for the 3D mannequin and outfit renderer.
+- Use a local database, likely SQLite, for prototype persistence.
+- Store wardrobe images and generated assets in local app storage.
+- Run product-link import as an in-request prototype first.
+- Use deterministic outfit recommendations first.
+- Keep body measurement onboarding manual and illustrated. Do not use AI for onboarding guidance in version 1.
 
-- Web-first app.
-- Native desktop shell first.
-- Local-first desktop app.
-- Cloud-first account-backed app.
-- Hybrid cloud app with a later native wrapper.
+This direction intentionally optimizes for the mannequin, wardrobe, and local desktop experience before cloud sync, multi-user auth, mobile, or production deployment.
 
-The strongest version 1 direction is a web-first, desktop-optimized application with a strict privacy model and a client-side 3D renderer. This keeps the product buildable, shareable, and ready for future mobile support while still serving the desktop-first experience.
+## Why The Direction Changed
 
-Native desktop packaging should remain a later layer, not the version 1 foundation.
+A web-first architecture would make account-backed sync, mobile access, and hosted AI workflows easier. It would also bias early decisions toward server routes, cloud storage, web deployment, and multi-user authorization before the core desktop mannequin experience is proven.
 
-## Recommended Version 1 Architecture
+Because this product is expected to feel like a focused desktop tool and may later be hard to migrate cleanly from a web-first shape, the first implementation should be designed as a desktop app from the start.
 
-Version 1 should be a TypeScript web application built around:
+The contract should still preserve future flexibility. The domain logic, measurement engine, renderer, recommendation rules, and import pipeline should live in reusable packages so they can later support a cloud backend or mobile client.
 
-- Next.js App Router for the application shell, routing, server-side reads, server actions, and API route handlers.
-- React for the interface.
-- Three.js through React Three Fiber for the 3D mannequin and outfit renderer.
-- Drei camera controls for rotate, zoom, and preset view ergonomics.
-- PostgreSQL as the source of truth.
-- Supabase-style Auth, Storage, and Row Level Security for private per-user data.
-- Drizzle ORM and SQL migrations for typed database access and transparent schema evolution.
-- A Node.js job worker for product-page imports, image analysis, and AI measurement extraction.
-- Private object storage for clothing photos, generated thumbnails, and future texture assets.
+## Recommended Prototype Architecture
 
-The app should be desktop-first in layout and interaction design, but implemented as a responsive web application so that later mobile support is an extension rather than a rewrite.
+Version 1 should start as a local desktop monorepo built around:
 
-## Decision Needed: App Shell
+- A desktop shell, with the exact shell still undecided between Tauri and Electron.
+- React, TypeScript, and Vite for the app UI.
+- Three.js through React Three Fiber for the 3D scene.
+- Drei camera controls for rotate, zoom, and front/side/back presets.
+- A deterministic measurement engine that converts user measurements into mannequin parameters.
+- A deterministic garment engine that converts garment metadata into simple category-specific shells.
+- SQLite for local structured data.
+- Local app-data file storage for clothing images, thumbnails, and generated assets.
+- A small local import service for public product-page extraction.
+- Optional AI extraction only as a later fallback for clothing metadata or garment measurements, not for body-measurement onboarding.
 
-There are three viable app-shell strategies.
+## Decision Needed: Desktop Shell
 
-Option A: Web-first desktop app.
+The accepted product direction is "desktop shell first." The remaining architecture decision is which desktop shell to use.
 
-- Build a responsive web app optimized for desktop.
-- Fastest path to product iteration.
-- Easiest future path to mobile.
-- Easier cloud auth, storage, product imports, and AI.
-- Does not feel fully native unless later wrapped.
+### Option A: Tauri
 
-Option B: Tauri desktop app first.
+Tauri packages a web UI inside a native desktop shell using the operating system's WebView and a Rust backend.
 
-- Better native desktop packaging and local filesystem affordances.
-- Smaller native binaries than Electron because Tauri uses the OS WebView.
-- Strong security model with explicit capabilities.
-- Adds Rust/toolchain and desktop distribution complexity.
-- Makes cloud/mobile product work less direct early on.
+Pros:
 
-Option C: Electron desktop app first.
+- Smaller app bundles than Electron in many cases.
+- Strong security model with explicit permissions and capabilities.
+- Good fit for local files, native menus, and desktop packaging.
+- Encourages a clean boundary between UI code and privileged native code.
+- Better long-term posture if the app should feel lightweight and native.
 
-- Mature desktop app ecosystem.
-- JavaScript/Node everywhere.
-- Easier local Node-based product import and filesystem behavior.
-- Larger app footprint.
-- Requires careful security discipline around renderer/main-process boundaries.
+Cons:
 
-Recommendation: choose Option A for version 1. Keep a future Tauri wrapper on the roadmap if native distribution, offline mode, or local file workflows become central.
+- Adds Rust and Tauri-specific app architecture.
+- More friction if the app needs heavy Node.js tooling inside the desktop app.
+- Product-link importing with browser automation may require extra design, such as a Node sidecar, external service, or simpler HTTP extraction first.
+- Smaller ecosystem than Electron for some desktop integrations.
 
-## Decision Needed: Account Model
+### Option B: Electron
 
-There are two viable version 1 account models.
+Electron packages a Chromium browser and Node.js runtime with the app.
 
-Option A: Real user accounts from the start.
+Pros:
 
-- Aligns with private per-user wardrobe and body data.
-- Supports future mobile and sync.
-- Makes storage and authorization architecture honest from the beginning.
-- Adds setup and auth work before the app feels useful.
+- Mature desktop ecosystem.
+- JavaScript and Node can be used across the app shell and local services.
+- Easier first path for local product import, filesystem workflows, image processing, and Playwright-style browser automation.
+- Large community and many examples for local SQLite apps.
+- Faster if we want the prototype to stay mostly TypeScript.
 
-Option B: Local single-user prototype first.
+Cons:
 
-- Faster for a visual mannequin prototype.
-- Avoids auth while the product is still changing.
-- Creates migration work later.
-- Can hide privacy and authorization problems until too late.
+- Larger application footprint.
+- Requires careful renderer/main-process security discipline.
+- Can encourage mixing UI, privileged filesystem code, and local service code unless boundaries are enforced.
+- Less lightweight than Tauri.
 
-Recommendation: use real accounts in version 1, while allowing local development to use a seeded test user. Body measurements and wardrobe data are sensitive enough that per-user authorization should not be bolted on later.
+### Current Lean
 
-## Decision Needed: Backend Provider Shape
+This is a genuine tradeoff.
 
-There are two reasonable backend shapes.
+If the first prototype values fast local implementation and product-link import experimentation, Electron is the pragmatic choice.
 
-Option A: Integrated backend platform.
+If the first prototype values a smaller, more native-feeling app and cleaner long-term desktop boundaries, Tauri is the cleaner choice.
 
-- Supabase-style Auth, Postgres, Storage, and RLS in one system.
-- Strong match for private per-user data.
-- Fast to prototype.
-- Storage policies can live near database ownership rules.
+My current recommendation is:
+
+- Choose Electron if in-app product importing and TypeScript-only iteration are the highest priorities for the first prototype.
+- Choose Tauri if the desktop shell itself should set the long-term foundation and we are comfortable handling import automation more carefully.
+
+## Accepted Decision: Local Single-User Prototype First
+
+The first prototype should not require real user accounts.
+
+Rules:
+
+- Treat the prototype as one private local user.
+- Design the data model with stable IDs and owner-like boundaries so future sync is possible.
+- Do not expose body measurements, wardrobe images, or import data to remote services unless a feature explicitly requires it.
+- Avoid building multi-user authorization until the cloud/sync direction is chosen.
+
+This keeps the first milestone focused on body profile creation, mannequin accuracy, wardrobe item creation, outfit building, and saved outfits.
+
+## Clarification Needed: Backend Provider Shape
+
+Earlier options compared an integrated backend against a composable backend. In a local desktop prototype, this decision changes meaning.
+
+The prototype does not need a hosted backend provider at all. The first "backend" can be local app code plus a local database plus local file storage.
+
+The backend-provider decision becomes a future sync/cloud decision.
+
+### Option A: Integrated Cloud Backend Later
+
+Examples: a Supabase-style setup with Auth, Postgres, Storage, and row-level security in one platform.
+
+Pros:
+
+- Fastest path from local prototype to private synced accounts.
+- Auth, database, storage, and authorization policies live close together.
+- Good match for private per-user wardrobe and body data.
+- Lower integration burden.
+
+Cons:
+
 - Some vendor coupling.
+- App architecture may start following the provider's way of doing things.
+- Local-first sync can be harder if the cloud backend becomes the source of truth too early.
 
-Option B: Composable backend.
+### Option B: Composable Cloud Backend Later
 
-- Auth provider, Postgres provider, object storage, and job worker chosen independently.
-- More control and replaceability.
+Examples: separate auth provider, hosted Postgres, object storage, background worker, and AI services.
+
+Pros:
+
+- More control over each piece.
+- Easier to replace one layer without replacing the whole backend.
+- Useful if recommendations, imports, and AI become specialized services.
+
+Cons:
+
 - More integration work.
-- More privacy and authorization surfaces to design manually.
+- More privacy and authorization surfaces to design.
+- More operational complexity before the product has proven the core loop.
 
-Recommendation: use an integrated Supabase-style backend for version 1 unless there is a strong reason to avoid it. The combination of Auth, Postgres, Storage, and RLS directly matches the product's privacy requirements.
+### Option C: Local-First With Optional Sync Later
 
-## Decision Needed: ORM And Schema Management
+Keep the desktop app's local database as the primary user experience, then add sync after the local model is stable.
 
-There are two strong TypeScript database approaches.
+Pros:
 
-Option A: Drizzle ORM.
+- Best match for a private desktop-first product.
+- The app remains useful offline.
+- Reduces pressure to solve multi-user infrastructure before the mannequin and wardrobe are good.
+- Keeps body data local by default.
 
-- TypeScript schema definitions.
+Cons:
+
+- Sync is a hard engineering problem when added later.
+- Conflict handling must be designed if users edit on multiple devices.
+- Mobile support eventually needs either sync or a separate data-access strategy.
+
+### Current Lean
+
+For version 1, defer the cloud provider choice. Build local-first, but keep the data model sync-ready.
+
+The next cloud decision should happen only after the mannequin, wardrobe, outfit builder, and local persistence loop are working.
+
+## Clarification Needed: ORM And Schema Management
+
+An ORM or query layer is the code that defines the database schema, runs migrations, and gives the app typed access to persisted data.
+
+For a desktop-first local prototype, the database should likely be SQLite. The ORM decision should be judged by how well it supports:
+
+- Local SQLite development.
+- Clear schema migrations.
+- TypeScript type safety.
+- A future path to cloud Postgres or sync.
+- Packaging inside a desktop app.
+
+### Option A: Drizzle
+
+Drizzle is a TypeScript-first schema and query toolkit that stays close to SQL.
+
+Pros:
+
+- Transparent schema definitions.
 - SQL-like query style.
-- Works well with Postgres and Supabase.
-- Migration flow can generate SQL and still allow raw SQL for RLS policies.
+- Good fit when we want to understand and control the database shape.
+- Works with SQLite and Postgres.
+- Easier to keep migrations explicit.
+- Good match for measurement tables where schema clarity matters.
+
+Cons:
+
 - Less abstracted than Prisma.
+- Some app patterns require more explicit SQL thinking.
+- Developer experience can feel more manual.
 
-Option B: Prisma ORM.
+### Option B: Prisma
 
-- Very mature developer experience.
+Prisma uses a schema file to generate a typed client for database access.
+
+Pros:
+
+- Very polished developer experience.
 - Strong generated client.
-- Broad documentation and framework guidance.
-- More abstracted schema layer.
-- RLS and SQL policy work may require extra care.
+- Excellent documentation and community adoption.
+- Comfortable for fast CRUD-heavy app development.
+- Good local SQLite support for many prototypes.
 
-Recommendation: use Drizzle for version 1 because this product needs transparent Postgres schema, RLS policies, and category-specific measurement tables that may benefit from staying close to SQL.
+Cons:
+
+- More abstracted from SQL.
+- Future row-level security or advanced SQL policy work may require extra care.
+- Desktop packaging can require attention around generated clients and native engines.
+- Switching between local SQLite and future Postgres may require more migration discipline.
+
+### Option C: Lightweight SQL Query Builder
+
+Examples: Kysely or carefully organized raw SQL.
+
+Pros:
+
+- Very explicit and portable.
+- Minimal abstraction.
+- Strong for local-first apps where SQL clarity matters.
+
+Cons:
+
+- More manual schema and migration work.
+- Less of a full batteries-included app data layer.
+- More room for inconsistency if patterns are not enforced.
+
+### Current Lean
+
+My recommendation is Drizzle for the first implementation, because the app needs a clear local schema, measurement-heavy tables, and a plausible future path to Postgres or sync. Prisma is also reasonable if you strongly prefer the generated-client workflow and faster CRUD ergonomics.
+
+This decision should be judged before implementation starts.
 
 ## High-Level System Diagram
 
 ```text
-User browser
+Desktop app shell
   |
-  | Next.js app shell
+  | React + TypeScript UI
   | - wardrobe catalogue
-  | - body profile
+  | - body profile onboarding
   | - outfit builder
-  | - client-only 3D scene
+  | - saved outfits
+  | - client-side 3D scene
   |
-Next.js server
+Local app services
   |
-  | Server Components: internal reads
-  | Server Actions: user-triggered mutations
-  | Route Handlers: upload URLs, product import requests, future APIs
+  | measurement engine
+  | garment shell engine
+  | deterministic recommendation engine
+  | product-link import prototype
   |
-Postgres + Auth + Storage
+Local persistence
   |
-  | private rows, private images, RLS policies
-  |
-Job worker
-  |
-  | product import
-  | image analysis
-  | AI measurement extraction
-  | thumbnail/asset preparation
+  | SQLite database
+  | local image and asset storage
 ```
 
 ## Codebase Shape
 
-The repository should start as a small monorepo, even if there is only one app at first.
+The repository should start as a small monorepo.
 
 Recommended structure:
 
 ```text
 apps/
-  web/
-    app/
-    components/
-    lib/
+  desktop/
+    src/
     public/
 packages/
   domain/
   renderer/
   measurement/
+  garments/
+  recommender/
   importer/
   db/
 docs/
@@ -190,49 +299,60 @@ docs/
 
 Package responsibilities:
 
-- `apps/web`: Next.js app, routes, UI composition, server actions, route handlers.
-- `packages/domain`: product categories, measurement schemas, units, confidence models, outfit rules.
+- `apps/desktop`: desktop shell, app composition, local service wiring, window behavior.
+- `packages/domain`: clothing categories, units, confidence models, outfit entities, shared types.
 - `packages/renderer`: React Three Fiber scene, camera controls, mannequin and garment render components.
-- `packages/measurement`: body measurement normalization, mannequin parameter mapping, garment ease calculations.
-- `packages/importer`: product-page extraction, retailer parsing utilities, AI extraction schemas.
-- `packages/db`: database schema, migrations, RLS policy SQL, typed query helpers.
+- `packages/measurement`: body measurement normalization, mannequin parameter mapping, validation, estimation.
+- `packages/garments`: garment shell parameters, ease calculations, layer ordering, category rules.
+- `packages/recommender`: deterministic outfit-generation rules.
+- `packages/importer`: public product-page extraction, parsing, source evidence, future AI extraction schemas.
+- `packages/db`: SQLite schema, migrations, typed query helpers.
 
-This keeps the 3D renderer, measurement logic, and database model from being trapped inside UI components.
+This keeps the core product logic out of UI components and makes future cloud or mobile work less painful.
+
+## Desktop App Boundaries
+
+The desktop app should have explicit boundaries between:
+
+- UI renderer code.
+- Privileged local app code.
+- Database access.
+- Filesystem access.
+- Product import code.
+- Optional AI calls.
+
+Rules:
+
+- The UI should not directly own filesystem paths, API keys, or privileged import logic.
+- The 3D renderer should consume normalized body and garment parameters.
+- Body measurement validation should happen before data reaches the renderer.
+- Product imports should produce editable drafts, not confirmed wardrobe items.
+- Any future AI provider key must stay outside the untrusted renderer surface.
 
 ## Frontend Architecture
 
-The frontend should be built as a desktop-first application interface, not a marketing site.
+The app should feel like a focused desktop tool, not a landing page.
 
-Primary routes:
+Primary views:
 
-- `/onboarding/body-profile`.
-- `/wardrobe`.
-- `/wardrobe/[itemId]`.
-- `/outfits`.
-- `/outfits/[outfitId]`.
-- `/settings/privacy`.
+- Body Profile.
+- Wardrobe.
+- Clothing Item Detail.
+- Outfit Builder.
+- Recommendations.
+- Saved Outfits.
+- Privacy and Data Settings.
 
-The main wardrobe and outfit builder view should use the already defined split:
+The main wardrobe and outfit builder view should use the split layout:
 
 - Left: searchable, filterable wardrobe catalogue.
 - Right: black 3D environment with mannequin and selected outfit.
 
 UI state should be separated into:
 
-- Persistent server state: wardrobe items, measurements, outfits, imports.
-- Local interaction state: selected item, active filters, 3D camera state, hover state.
-- Renderer state: mannequin parameters, garment shell parameters, camera preset, render quality.
-
-## Next.js Data Boundaries
-
-Use the Next.js App Router patterns this way:
-
-- Server Components for internal reads where data can be fetched before rendering.
-- Server Actions for mutations triggered by the app UI.
-- Route Handlers for external-style endpoints, upload flows, product import submission, future mobile API endpoints, and webhooks.
-- Node.js runtime by default, especially for imports, AI calls, image processing, and database operations.
-
-The 3D renderer must be a client-only component. Three.js, React Three Fiber, and browser rendering APIs should not run during server rendering.
+- Persistent local state: body profile, clothing items, measurements, outfits, imports.
+- Local interaction state: selected item, active filters, panel state, active camera preset.
+- Renderer state: mannequin parameters, garment parameters, camera, render quality.
 
 ## 3D Renderer Architecture
 
@@ -245,18 +365,16 @@ Version 1 renderer modules:
 - `GarmentLayer`: renders category-specific garment shells.
 - `OutfitComposition`: maps selected outfit data into mannequin and garment render props.
 - `CameraControls`: front, side, back, reset, rotate, zoom.
-- `RenderQualityController`: pixel ratio, shadows, antialiasing, and future low/high-quality assets.
+- `RenderQualityController`: pixel ratio, shadows, antialiasing, and future quality settings.
 
 Initial 3D decisions:
 
-- Use GLB/glTF for base mannequin assets.
+- Use GLB/glTF for the base mannequin asset.
 - Use a neutral unisex base mesh with morph targets or procedural transforms.
 - Use simple generated garment meshes first.
 - Use color and pattern labels for visual identity.
 - Defer image projection until the mannequin and shell system is stable.
-- Use demand-based rendering or performance scaling where possible so the 3D pane is not constantly expensive.
-
-OffscreenCanvas and Web Workers are future optimizations. They should not be required for the first implementation unless mannequin or garment generation blocks the UI.
+- Keep rendering deterministic so measurement changes produce understandable visual changes.
 
 ## Mannequin Engine
 
@@ -267,7 +385,7 @@ Inputs:
 - Required user body measurements.
 - Optional user body measurements.
 - Unit preference.
-- Measurement confidence or completeness.
+- Measurement completeness.
 
 Outputs:
 
@@ -282,7 +400,7 @@ Rules:
 - Measurement conversion must happen before rendering.
 - Missing optional measurements should be estimated and labeled as estimated.
 - Body shape logic should live in `packages/measurement`, not inside React components.
-- Rendering should consume normalized body parameters rather than raw user form fields.
+- Rendering should consume normalized body parameters rather than raw form fields.
 
 ## Garment Rendering Engine
 
@@ -310,11 +428,11 @@ Rules:
 - Low-confidence measurements can affect visuals but should not produce strong fit notes.
 - Fit notes should remain descriptive and non-judgmental.
 
-## Data Model Areas
+## Local Data Model Areas
 
-The first database schema should cover:
+The first local database schema should cover:
 
-- Users and private profiles.
+- Local profile.
 - Body profiles.
 - Body measurements.
 - Clothing items.
@@ -323,119 +441,142 @@ The first database schema should cover:
 - Measurement sources and confidence.
 - Outfits.
 - Outfit items.
-- Product import jobs.
-- AI extraction runs.
+- Product import drafts.
 - Generated assets.
 
-Every private table should include an owner reference and RLS policy.
+Because the first prototype is local single-user, not every table needs an account owner. Still, entities should use stable IDs and timestamps so future sync is possible.
 
 Sensitive fields:
 
 - Raw body measurements.
 - Clothing photos.
 - Product import URLs.
-- AI extraction inputs and outputs.
+- AI extraction inputs and outputs, if added later.
 - Saved outfit notes.
 
-## Storage Architecture
+## Local Storage Architecture
 
-Use private object storage for:
+Use local app-data storage for:
 
 - Original uploaded clothing photos.
-- Product images copied with permission or user intent.
+- Product images saved by the user through imports.
 - Generated thumbnails.
 - Future segmentation masks.
 - Future generated textures.
 
-Recommended storage path shape:
+Recommended local path shape:
 
 ```text
-users/{userId}/clothing/{itemId}/original/{assetId}
-users/{userId}/clothing/{itemId}/thumb/{assetId}
-users/{userId}/generated/{assetId}
+app-data/
+  wardrobe/
+    clothing/
+      {itemId}/
+        original/
+        thumbnails/
+        generated/
+  database/
 ```
 
 Rules:
 
-- Buckets should be private by default.
-- Access should be mediated by signed URLs or authenticated storage policies.
-- The app should generate thumbnails so catalogue browsing does not use full-resolution originals.
-- Future image processing should strip unnecessary metadata where possible.
+- Do not store body measurements in logs.
+- Generate thumbnails for catalogue browsing.
+- Keep original images available for future reprocessing.
+- Strip unnecessary image metadata where feasible.
+- Add export and delete flows before treating the app as production-ready.
 
 ## Product Link Import Architecture
 
-Product link import should be asynchronous.
+Product link import should begin as an in-request prototype.
 
 Flow:
 
 1. User submits a public product URL.
-2. Server validates the URL.
-3. Server creates an import job.
-4. Worker fetches the public page.
-5. Worker extracts metadata, product images, size data, and candidate measurements.
-6. Worker uses AI only when structured extraction is insufficient.
-7. Worker creates or updates a clothing item draft.
-8. User reviews and confirms imported data.
+2. The desktop app validates the URL.
+3. The local import service fetches or inspects the public page.
+4. The importer extracts metadata, product images, size data, and candidate measurements when possible.
+5. The importer creates an editable clothing-item draft.
+6. The user reviews and confirms imported data.
 
 Rules:
 
-- Do not block the UI while extraction runs.
 - Do not require logged-in retailer pages.
 - Do not bypass anti-bot systems.
 - Do not scrape private accounts.
-- Protect against SSRF by rejecting local, private-network, and non-HTTP(S) URLs.
-- Store raw extraction evidence only when useful and privacy-safe.
+- Reject local, private-network, and non-HTTP(S) URLs.
 - Keep source and confidence on every imported measurement.
+- Prefer saved HTML fixtures for tests instead of live retailer tests.
+
+Future upgrade:
+
+- Move imports to an async local queue or cloud worker if they become slow, flaky, or browser-automation-heavy.
+
+Shell-specific note:
+
+- Electron makes local Node and Playwright-style import experiments easier.
+- Tauri may push us toward simple HTTP extraction first, a Node sidecar, or a later import service.
 
 ## AI Architecture
 
-AI should be used as a fallback and assistant, not as the source of truth.
+AI should not be used for body-measurement onboarding in version 1.
 
-Version 1 AI use cases:
+Acceptable future AI uses:
 
 - Product metadata cleanup.
 - Category and subcategory detection.
 - Color and pattern labels.
 - Measurement extraction from product descriptions.
-- Measurement estimation from images when no better source exists.
-- Optional body measurement guidance text.
-
-AI outputs should use structured schemas wherever possible.
+- Measurement estimation from clothing images when no better source exists.
 
 Rules:
 
-- Store AI result confidence and source.
-- Let users edit or reject AI outputs.
-- Avoid sending body measurements or clothing photos to AI providers unless necessary for the specific feature and covered by privacy disclosure.
-- Do not use user body data or wardrobe photos for shared model training without explicit opt-in.
-- Prefer prompt and schema versioning so extraction behavior can be audited later.
+- AI outputs must remain editable by the user.
+- Store AI source and confidence.
+- Do not treat AI-estimated garment measurements as exact.
+- Avoid sending body measurements or wardrobe photos to any remote provider unless the feature explicitly requires it and the privacy disclosure is clear.
+- Keep prompt and schema versions if AI extraction is added.
 
 ## Recommendation Architecture
 
-Version 1 recommendations should be separated into two layers:
+Version 1 recommendations should be deterministic first.
 
-- Rules layer: deterministic outfit ideas using category, color, weather/season tags if available, saved outfits, and user preferences.
-- AI layer: optional natural-language styling assistant that explains or refines outfit ideas.
+Inputs:
 
-Recommendation data should not be entangled with the renderer. The renderer shows selected outfits; recommendation logic produces outfit candidates.
+- Category coverage.
+- Color labels.
+- Pattern labels.
+- Tags.
+- Season or weather tags if available.
+- Previously saved outfits.
+- User exclusions or favorites, if available.
 
-Decision needed: whether AI-assisted recommendations ship in the first release or after the catalogue, mannequin, and saved outfits are stable.
+Outputs:
+
+- Outfit candidates.
+- Explanation tags such as "complete outfit", "uses saved favorite", or "lightweight outerwear".
+
+Rules:
+
+- Recommendations should be framed as outfit ideas, not authority.
+- The recommendation engine should not be coupled to the 3D renderer.
+- Users should be able to edit, save, or ignore recommendations.
+- AI styling assistance can be considered later after the deterministic engine produces usable outfit candidates.
 
 ## Privacy And Security Architecture
 
-Privacy requirements are central, not decorative.
+Privacy requirements are central even in a local prototype.
 
 Requirements:
 
-- All user-owned rows must be protected by owner-scoped authorization.
-- Storage objects must be private by default.
-- Service-role keys and AI provider keys must never be exposed to the browser.
-- Body measurements should not be logged in analytics.
-- Product import workers should log job state, not sensitive raw body or wardrobe data.
+- Body measurements and wardrobe images stay local by default.
+- The app should make it clear when data is imported from or sent to the web.
+- Do not log raw body measurements.
+- Do not log raw clothing photos.
+- Do not log full imported product-page HTML unless intentionally stored for debugging fixtures.
 - Users should be able to delete clothing items, photos, saved outfits, and body profiles.
-- Future sharing features must exclude body data by default.
+- Future cloud sync must be opt-in or clearly part of the product contract.
 
-Architecture rule: if an endpoint can read or mutate private wardrobe data, it must be designed assuming another authenticated user may try to access it.
+Architecture rule: even before real accounts exist, design private data as if future sync will need strict ownership boundaries.
 
 ## Testing Strategy
 
@@ -452,12 +593,11 @@ Unit tests:
 
 Integration tests:
 
-- Auth ownership checks.
-- RLS policy behavior.
+- Local database migrations.
 - Clothing item creation.
-- Photo upload metadata.
-- Product import job lifecycle.
-- AI extraction schema validation.
+- Image metadata records.
+- Product import draft lifecycle.
+- AI extraction schema validation, if added.
 
 Renderer tests:
 
@@ -466,12 +606,6 @@ Renderer tests:
 - Front, side, and back views remain framed.
 - Zoom controls stay bounded.
 - Empty scene, loading scene, and error scene are not blank.
-
-Product import tests:
-
-- Prefer saved HTML fixtures over live retailer tests.
-- Test public product-page extraction against fixtures.
-- Test failure paths and manual fallback.
 
 End-to-end tests:
 
@@ -482,99 +616,77 @@ End-to-end tests:
 - Reopen saved outfit.
 - Import product URL and review draft.
 
-## Deployment Architecture
+## Distribution And Deployment
 
-Recommended deployment shape:
+The first prototype can be run locally by developers.
 
-- Web app deployed as a Node-capable Next.js app.
-- Postgres/Auth/Storage hosted by the backend platform.
-- Product import and AI extraction run in a background worker.
-- Environment secrets managed by the deployment provider.
-- Separate environments for local, preview, and production.
+Prototype requirements:
 
-Avoid relying on Edge runtime for version 1 because product import, AI, image processing, and database libraries are more compatible with Node.js.
+- Clear install instructions.
+- Local development command.
+- Local database setup and migration command.
+- Seed data for testing body profiles and wardrobe items.
+- Manual export or backup path documented before real personal data is used heavily.
 
-## Observability
+Production desktop distribution is a later decision. It will depend on the desktop shell choice.
 
-The app should track operational health without collecting sensitive body data.
+## Future Cloud And Mobile Path
 
-Useful events:
+Future versions may add:
 
-- Import job started, completed, failed.
-- AI extraction completed or failed.
-- Clothing item created.
-- Outfit saved.
-- Renderer error.
-- Upload failed.
+- Cloud sync.
+- Real user accounts.
+- Cross-device wardrobe access.
+- Mobile app.
+- Cloud product-import workers.
+- AI-powered recommendations.
+- External clothing search.
 
-Avoid:
+To preserve this path:
 
-- Raw body measurements in logs.
-- Raw clothing photos in logs.
-- Full product page HTML in logs.
-- Sensitive prompt inputs in analytics.
-
-## Native Desktop Roadmap
-
-A native desktop app is not required for version 1.
-
-If the product later needs native packaging, the preferred path is:
-
-1. Keep the core app web-based.
-2. Keep domain, measurement, renderer, and importer code in shared packages.
-3. Add a Tauri wrapper if native packaging, local filesystem access, or offline mode becomes important.
-
-Electron should be considered only if Tauri is blocked by required native capabilities or JavaScript/Node desktop integration becomes a decisive advantage.
+- Keep domain and measurement logic platform-agnostic.
+- Keep renderer logic separate from desktop shell code.
+- Use stable IDs for local entities.
+- Store source and confidence metadata for imported measurements.
+- Avoid assuming the local database will be the only storage forever.
 
 ## Research Sources
 
-- Next.js App Router: https://nextjs.org/docs/app
-- Next.js Route Handlers: https://nextjs.org/docs/app/getting-started/route-handlers
-- Next.js Server Actions / mutating data: https://nextjs.org/docs/app/getting-started/mutating-data
 - React Three Fiber introduction: https://r3f.docs.pmnd.rs/
-- React Three Fiber Canvas: https://github.com/pmndrs/react-three-fiber/blob/master/docs/API/canvas.mdx
 - React Three Fiber performance guidance: https://r3f.docs.pmnd.rs/advanced/scaling-performance
 - Drei controls: https://drei.docs.pmnd.rs/controls/introduction
 - Three.js GLTFLoader: https://threejs.org/docs/pages/GLTFLoader.html
 - Three.js OrbitControls: https://threejs.org/docs/pages/OrbitControls.html
-- Supabase Auth: https://supabase.com/docs/guides/auth
-- Supabase securing data: https://supabase.com/docs/guides/database/secure-data
-- Supabase Storage access control: https://supabase.com/docs/guides/storage/security/access-control
-- Supabase Drizzle guide: https://supabase.com/docs/guides/database/drizzle
-- Drizzle migrations: https://orm.drizzle.team/docs/migrations
-- Drizzle schema: https://orm.drizzle.team/docs/sql-schema-declaration
 - Tauri architecture: https://v2.tauri.app/concept/architecture/
+- Tauri sidecars: https://v2.tauri.app/develop/sidecar/
 - Tauri security: https://v2.tauri.app/security/
 - Tauri capabilities: https://tauri.app/security/capabilities/
 - Electron process model: https://www.electronjs.org/docs/latest/tutorial/process-model
 - Electron security: https://www.electronjs.org/docs/latest/tutorial/security
 - Playwright browser automation docs: https://playwright.dev/docs/pages
 - Playwright browser contexts: https://playwright.dev/docs/browser-contexts
-- OpenAI image input and quickstart: https://platform.openai.com/docs/quickstart/make-your-first-api-request
+- Drizzle migrations: https://orm.drizzle.team/docs/migrations
+- Drizzle schema: https://orm.drizzle.team/docs/sql-schema-declaration
+- Prisma SQLite database connector: https://docs.prisma.io/docs/orm/core-concepts/supported-databases/sqlite
 - OpenAI images and vision guide: https://platform.openai.com/docs/guides/images-vision
 - OpenAI structured outputs guide: https://platform.openai.com/docs/guides/structured-outputs
-- MDN Web Workers: https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API
-- MDN OffscreenCanvas: https://developer.mozilla.org/en-US/docs/Web/API/OffscreenCanvas
 
-## Resolved Architecture Recommendations
+## Resolved Architecture Decisions
 
-These are recommendations, not yet accepted product decisions:
-
-- Build web-first for version 1.
-- Use real accounts from the start.
-- Use a Supabase-style integrated backend.
-- Use Drizzle for Postgres schema and migrations.
-- Keep 3D rendering client-only.
+- Build desktop shell first.
+- Start local single-user.
+- Use local persistence first.
+- Keep 3D rendering client-side inside the desktop UI.
 - Use React Three Fiber and Three.js for the renderer.
-- Run product import and AI extraction asynchronously in a worker.
-- Defer native desktop packaging.
+- Run product imports in-request for the prototype.
+- Use deterministic recommendations first.
+- Keep body-measurement onboarding manual and illustrated.
+- Defer cloud auth, hosted storage, and multi-user authorization.
 
 ## Decisions For User Judgment
 
-1. Should version 1 be web-first as recommended, or should we build a native desktop shell first?
-2. Should version 1 use real accounts from the start, or begin as a local single-user prototype?
-3. Should we use a Supabase-style integrated backend, or a more composable stack with separate auth, database, and object storage providers?
-4. Should we use Drizzle as recommended, or would you prefer Prisma for the database layer?
-5. Should product imports run through an asynchronous job worker from the start, or begin as a simpler in-request prototype?
-6. Should AI-assisted outfit recommendations ship in version 1, or should version 1 keep recommendations deterministic until the wardrobe/mannequin flow is stable?
-7. Should measurement onboarding include optional AI guidance, or remain manual with illustrated instructions only?
+1. Desktop shell: Tauri or Electron?
+2. Local database/query layer: Drizzle, Prisma, or a lighter SQL query builder?
+3. Future backend direction: integrated cloud backend, composable cloud backend, or local-first sync?
+4. Product import implementation detail: simple HTTP extraction first, or browser automation early?
+5. Mannequin interaction details from the mannequin contract: live measurement preview, weight handling, and pose scope.

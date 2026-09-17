@@ -29,7 +29,7 @@ The app must be unisex and should not assume gendered clothing categories, body 
 
 ## Platform
 
-Version 1 is desktop-first.
+Version 1 is desktop-first and should begin as a local desktop shell prototype rather than a web-first app.
 
 Mobile support is expected in a future version after the desktop experience is stable and complete.
 
@@ -200,7 +200,7 @@ Body measurements, clothing photos, wardrobe data, outfits, product links, and a
 
 The system should treat body measurements and photos as sensitive personal data.
 
-For a cloud version, user accounts and authorization checks are required before any private data leaves a local-only prototype. A local prototype may use a single mock user, but the production product contract assumes real per-user privacy boundaries.
+The first prototype should be local single-user. For a future cloud version, user accounts and authorization checks are required before any private data leaves a local-only prototype.
 
 Sensitive data should not be used to train shared models unless the user gives explicit opt-in consent.
 
@@ -275,19 +275,28 @@ Version 1 will not attempt to deliver:
 - Pattern and texture scope: support dominant colors plus simple pattern labels in version 1; defer image projection until core mannequin and garment shells are stable.
 - Product link import scope: support public product pages only in version 1; logged-in retailer imports may be considered later.
 - Body measurement onboarding: require the full useful measurement set in version 1 rather than a shorter quick-start profile.
+- App platform: build a desktop shell first rather than a web-first app.
+- Account model: start with a local single-user prototype.
+- Product import architecture: use an in-request prototype first, then add an async queue only when imports become slow or unreliable.
+- Recommendation scope: use deterministic outfit recommendations first; AI styling assistance can come later.
+- Measurement onboarding guidance: keep onboarding manual and illustrated; do not use AI guidance for measuring the body in version 1.
 
 ## Remaining Open Decisions
 
-1. Should version 1 ship with only manual body measurement input, or also include optional AI guidance for measuring yourself?
-2. Should outfit recommendations be available in the first release or follow shortly after the catalogue and mannequin are stable?
-3. Should the first version require user accounts, or can it begin as a local/private single-user app?
+1. Should the desktop shell use Tauri or Electron?
+2. Should the local data layer use Drizzle, Prisma, or a lighter SQL query builder?
+3. Which future backend direction should the architecture preserve most strongly: integrated cloud backend, composable cloud backend, or local-first sync?
+4. Should product-link import begin with simple HTTP extraction first, or include browser automation early?
+5. Should the mannequin update live during measurement entry, how should optional weight be handled, and should version 1 support only a neutral pose?
 
 ## Recommended Next Step
 
-Before implementation, resolve the open product decisions in the mannequin and garment rendering contracts:
+Before implementation, resolve the remaining architecture and mannequin decisions:
 
-- Body measurement guidance scope.
-- Recommendation scope.
-- Account and privacy architecture.
+- Desktop shell choice.
+- Local database/query layer.
+- Future backend posture.
+- Product import implementation detail.
+- Mannequin live preview, weight handling, and pose scope.
 
 These decisions should be settled before the app architecture is finalized, because they affect the data model, onboarding flow, 3D rendering approach, and measurement import pipeline.

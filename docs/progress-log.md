@@ -13,3 +13,9 @@
 - Accepted public product-page imports only for version 1.
 - Accepted the full useful body measurement set for version 1 onboarding.
 - Added the version 1 app architecture contract.
+- Accepted a desktop shell first architecture rather than a web-first app.
+- Accepted a local single-user prototype before real accounts or cloud sync.
+- Accepted in-request product imports for the first prototype.
+- Accepted deterministic outfit recommendations first.
+- Accepted manual illustrated measurement onboarding, without AI measurement guidance.
+- Revised the app architecture contract around a local desktop prototype and clarified the remaining backend and ORM choices.

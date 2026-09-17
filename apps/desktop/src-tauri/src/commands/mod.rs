@@ -1,3 +1,1 @@
-mod app;
-
-pub use app::app_get_status;
+pub mod app;

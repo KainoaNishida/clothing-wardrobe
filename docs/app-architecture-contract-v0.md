@@ -17,6 +17,7 @@ The following decisions are accepted for the first prototype:
 - Use a React and TypeScript interface embedded in the desktop shell.
 - Use Three.js through React Three Fiber for the 3D mannequin and outfit renderer.
 - Use a local database, likely SQLite, for prototype persistence.
+- Use Rust-owned SQLite behind Tauri commands as the first persistence strategy.
 - Store wardrobe images and generated assets in local app storage.
 - Run product-link import as an in-request prototype first.
 - Use deterministic outfit recommendations first.
@@ -43,6 +44,7 @@ Version 1 should start as a local desktop monorepo built around:
 - A deterministic measurement engine that converts user measurements into mannequin parameters.
 - A deterministic garment engine that converts garment metadata into simple category-specific shells.
 - SQLite for local structured data.
+- Rust-owned Tauri command handlers for SQLite access.
 - Local app-data file storage for clothing images, thumbnails, and generated assets.
 - A small local import service for public product-page extraction.
 - Optional AI extraction only as a later fallback for clothing metadata or garment measurements, not for body-measurement onboarding.
@@ -145,11 +147,11 @@ For version 1, defer the cloud provider choice. Build local-first, but keep the 
 
 The next cloud decision should happen only after the mannequin, wardrobe, outfit builder, and local persistence loop are working.
 
-## Clarification Needed: Local Data Layer
+## Accepted Decision: Local Data Layer
 
 Choosing Tauri changes the database decision. The cleanest Tauri architecture does not automatically imply a Node-style TypeScript ORM.
 
-The first prototype should use SQLite, but there are three viable ways to access it.
+The first prototype should use SQLite through Rust-owned Tauri commands.
 
 ### Option A: Rust-Owned SQLite Commands
 
@@ -169,7 +171,7 @@ Cons:
 - TypeScript DTOs and Rust structs must be kept aligned.
 - Drizzle is not the runtime query layer.
 
-Current recommendation: use this for the first prototype.
+Decision: use this for the first prototype.
 
 ### Option B: Tauri SQL Plugin From Renderer
 
@@ -203,7 +205,7 @@ Cons:
 - Adds a second local backend process.
 - Less Tauri-native than Rust-owned commands.
 
-This decision should be judged before scaffolding the app.
+The other options remain fallback paths if Rust-owned persistence becomes a bottleneck.
 
 ## High-Level System Diagram
 
@@ -633,6 +635,7 @@ To preserve this path:
 - Use Tauri as the desktop shell.
 - Start local single-user.
 - Use local persistence first.
+- Use Rust-owned SQLite behind Tauri commands.
 - Keep 3D rendering client-side inside the desktop UI.
 - Use React Three Fiber and Three.js for the renderer.
 - Run product imports in-request for the prototype.
@@ -642,7 +645,6 @@ To preserve this path:
 
 ## Decisions For User Judgment
 
-1. Local database/query layer: Rust-owned SQLite commands, Tauri SQL plugin in the renderer, or a Node sidecar with Drizzle?
-2. Future backend direction: integrated cloud backend, composable cloud backend, or local-first sync?
-3. Product import implementation detail: simple HTTP extraction first, or browser automation early?
-4. Mannequin interaction details from the mannequin contract: live measurement preview, weight handling, and pose scope.
+1. Future backend direction: integrated cloud backend, composable cloud backend, or local-first sync?
+2. Product import implementation detail: simple HTTP extraction first, or browser automation early?
+3. Mannequin interaction details from the mannequin contract: live measurement preview, weight handling, and pose scope.

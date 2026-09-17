@@ -15,11 +15,11 @@ Accepted inputs:
 - Deterministic recommendations first.
 - In-request product imports first.
 
-Proposed implementation choice:
+Accepted implementation choice:
 
 - Use Rust-owned SQLite behind Tauri commands for the first prototype.
 
-This proposed choice should be judged before scaffolding the app. It is cleaner for Tauri than forcing a Node-style ORM into the desktop shell.
+This is the selected first persistence strategy. It is cleaner for Tauri than forcing a Node-style ORM into the desktop shell.
 
 ## Architecture Summary
 
@@ -62,9 +62,9 @@ Electron would make Node-based import tooling and Drizzle-based local persistenc
 
 The tradeoff is that we should not assume a Node runtime exists inside the app. That changes the database and import design.
 
-## Persistence Decision
+## Accepted Persistence Decision
 
-Choosing Tauri creates three viable persistence options.
+Choosing Tauri creates three viable persistence options. The selected path is Rust-owned SQLite behind Tauri commands.
 
 ### Option A: Rust-Owned SQLite Commands
 
@@ -84,7 +84,7 @@ Cons:
 - TypeScript domain types and Rust DTOs must be kept aligned.
 - Drizzle is not the runtime query layer.
 
-Recommendation: use this for the first prototype.
+Decision: use this for the first prototype.
 
 ### Option B: Tauri SQL Plugin From Renderer
 
@@ -650,11 +650,10 @@ End-to-end tests:
 
 ## Open Decisions
 
-1. Approve or reject Rust-owned SQLite commands as the first persistence strategy.
-2. Decide whether product import starts as simple HTTP extraction only, or whether we plan for browser automation early.
-3. Decide whether body measurement edits should update the mannequin live before saving.
-4. Decide whether optional weight is excluded, hidden, or allowed as optional context.
-5. Decide whether version 1 mannequin pose is neutral only.
+1. Decide whether product import starts as simple HTTP extraction only, or whether we plan for browser automation early.
+2. Decide whether body measurement edits should update the mannequin live before saving.
+3. Decide whether optional weight is excluded, hidden, or allowed as optional context.
+4. Decide whether version 1 mannequin pose is neutral only.
 
 ## Sources
 

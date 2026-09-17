@@ -13,6 +13,7 @@ This repository is in product-contract and initial technical-architecture mode. 
 - Desktop-first experience.
 - Tauri desktop shell first.
 - Local single-user prototype before cloud sync.
+- Rust-owned SQLite behind Tauri commands.
 - Private per-user wardrobe and body profile.
 - Guided manual body measurement input.
 - Template-driven parametric mannequin.
@@ -31,7 +32,6 @@ This repository is in product-contract and initial technical-architecture mode. 
 
 ## Next Planning Areas
 
-- Local data-layer implementation choice.
 - Tauri scaffold and app shell.
 - Wardrobe data model implementation.
 - Body measurement onboarding flow.

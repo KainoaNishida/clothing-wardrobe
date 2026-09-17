@@ -279,24 +279,23 @@ Version 1 will not attempt to deliver:
 - App platform: build a desktop shell first rather than a web-first app.
 - Desktop shell: use Tauri first rather than Electron.
 - Account model: start with a local single-user prototype.
+- Local data layer: use Rust-owned SQLite behind Tauri commands for the first prototype.
 - Product import architecture: use an in-request prototype first, then add an async queue only when imports become slow or unreliable.
 - Recommendation scope: use deterministic outfit recommendations first; AI styling assistance can come later.
 - Measurement onboarding guidance: keep onboarding manual and illustrated; do not use AI guidance for measuring the body in version 1.
 
 ## Remaining Open Decisions
 
-1. Should the local data layer use Rust-owned SQLite commands, the Tauri SQL plugin from the renderer, or a Node sidecar with Drizzle?
-2. Which future backend direction should the architecture preserve most strongly: integrated cloud backend, composable cloud backend, or local-first sync?
-3. Should product-link import begin with simple HTTP extraction first, or include browser automation early?
-4. Should the mannequin update live during measurement entry, how should optional weight be handled, and should version 1 support only a neutral pose?
+1. Which future backend direction should the architecture preserve most strongly: integrated cloud backend, composable cloud backend, or local-first sync?
+2. Should product-link import begin with simple HTTP extraction first, or include browser automation early?
+3. Should the mannequin update live during measurement entry, how should optional weight be handled, and should version 1 support only a neutral pose?
 
 ## Recommended Next Step
 
-Before implementation, resolve the remaining architecture and mannequin decisions:
+Begin the first Tauri scaffold while continuing to resolve the remaining product decisions before their feature areas are implemented:
 
-- Local database/query layer.
 - Future backend posture.
 - Product import implementation detail.
 - Mannequin live preview, weight handling, and pose scope.
 
-These decisions should be settled before the app architecture is finalized, because they affect the data model, onboarding flow, 3D rendering approach, and measurement import pipeline.
+These decisions affect later data sync, onboarding behavior, 3D rendering detail, and import depth. They do not block the initial app shell, renderer placeholder, and Rust-owned SQLite scaffold.

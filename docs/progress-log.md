@@ -21,3 +21,4 @@
 - Revised the app architecture contract around a local desktop prototype and clarified the remaining backend and ORM choices.
 - Accepted Tauri as the first desktop shell.
 - Began the initial technical architecture design for a Tauri local desktop prototype.
+- Accepted Rust-owned SQLite behind Tauri commands as the first persistence strategy.

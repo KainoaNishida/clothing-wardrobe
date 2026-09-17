@@ -6,11 +6,13 @@ The product lets users catalogue clothing, enter body measurements, preview outf
 
 ## Current Stage
 
-This repository is in product-contract and architecture-discovery mode. No application code has been implemented yet.
+This repository is in product-contract and initial technical-architecture mode. No application code has been implemented yet.
 
 ## Version 1 Direction
 
 - Desktop-first experience.
+- Tauri desktop shell first.
+- Local single-user prototype before cloud sync.
 - Private per-user wardrobe and body profile.
 - Guided manual body measurement input.
 - Template-driven parametric mannequin.
@@ -25,11 +27,12 @@ This repository is in product-contract and architecture-discovery mode. No appli
 - [Mannequin contract](docs/mannequin-contract-v0.md)
 - [Garment rendering and measurement contract](docs/garment-rendering-contract-v0.md)
 - [App architecture contract](docs/app-architecture-contract-v0.md)
+- [Technical architecture design](docs/technical-architecture-design-v0.md)
 
 ## Next Planning Areas
 
-- Account and privacy architecture.
-- Wardrobe data model.
-- 3D renderer architecture.
+- Local data-layer implementation choice.
+- Tauri scaffold and app shell.
+- Wardrobe data model implementation.
 - Body measurement onboarding flow.
-- Recommendation scope for version 1.
+- First 3D renderer scaffold.

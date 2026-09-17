@@ -19,3 +19,5 @@
 - Accepted deterministic outfit recommendations first.
 - Accepted manual illustrated measurement onboarding, without AI measurement guidance.
 - Revised the app architecture contract around a local desktop prototype and clarified the remaining backend and ORM choices.
+- Accepted Tauri as the first desktop shell.
+- Began the initial technical architecture design for a Tauri local desktop prototype.

@@ -5,6 +5,7 @@
 - [Version 1 Mannequin Contract](mannequin-contract-v0.md)
 - [Version 1 Garment Rendering and Measurement Contract](garment-rendering-contract-v0.md)
 - [Version 1 App Architecture Contract](app-architecture-contract-v0.md)
+- [Technical Architecture Design](technical-architecture-design-v0.md)
 
 ## Product Summary
 
@@ -276,6 +277,7 @@ Version 1 will not attempt to deliver:
 - Product link import scope: support public product pages only in version 1; logged-in retailer imports may be considered later.
 - Body measurement onboarding: require the full useful measurement set in version 1 rather than a shorter quick-start profile.
 - App platform: build a desktop shell first rather than a web-first app.
+- Desktop shell: use Tauri first rather than Electron.
 - Account model: start with a local single-user prototype.
 - Product import architecture: use an in-request prototype first, then add an async queue only when imports become slow or unreliable.
 - Recommendation scope: use deterministic outfit recommendations first; AI styling assistance can come later.
@@ -283,17 +285,15 @@ Version 1 will not attempt to deliver:
 
 ## Remaining Open Decisions
 
-1. Should the desktop shell use Tauri or Electron?
-2. Should the local data layer use Drizzle, Prisma, or a lighter SQL query builder?
-3. Which future backend direction should the architecture preserve most strongly: integrated cloud backend, composable cloud backend, or local-first sync?
-4. Should product-link import begin with simple HTTP extraction first, or include browser automation early?
-5. Should the mannequin update live during measurement entry, how should optional weight be handled, and should version 1 support only a neutral pose?
+1. Should the local data layer use Rust-owned SQLite commands, the Tauri SQL plugin from the renderer, or a Node sidecar with Drizzle?
+2. Which future backend direction should the architecture preserve most strongly: integrated cloud backend, composable cloud backend, or local-first sync?
+3. Should product-link import begin with simple HTTP extraction first, or include browser automation early?
+4. Should the mannequin update live during measurement entry, how should optional weight be handled, and should version 1 support only a neutral pose?
 
 ## Recommended Next Step
 
 Before implementation, resolve the remaining architecture and mannequin decisions:
 
-- Desktop shell choice.
 - Local database/query layer.
 - Future backend posture.
 - Product import implementation detail.

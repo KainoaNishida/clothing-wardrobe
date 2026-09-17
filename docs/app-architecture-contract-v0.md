@@ -11,6 +11,7 @@ The current architectural goal is to prove the hardest product thesis first: a p
 The following decisions are accepted for the first prototype:
 
 - Build a desktop shell first, not a web-first app.
+- Use Tauri as the desktop shell.
 - Start as a local single-user app.
 - Keep all user wardrobe data, body measurements, and uploaded images private on the user's machine in the first prototype.
 - Use a React and TypeScript interface embedded in the desktop shell.
@@ -35,7 +36,7 @@ The contract should still preserve future flexibility. The domain logic, measure
 
 Version 1 should start as a local desktop monorepo built around:
 
-- A desktop shell, with the exact shell still undecided between Tauri and Electron.
+- Tauri 2 as the desktop shell.
 - React, TypeScript, and Vite for the app UI.
 - Three.js through React Three Fiber for the 3D scene.
 - Drei camera controls for rotate, zoom, and front/side/back presets.
@@ -46,15 +47,11 @@ Version 1 should start as a local desktop monorepo built around:
 - A small local import service for public product-page extraction.
 - Optional AI extraction only as a later fallback for clothing metadata or garment measurements, not for body-measurement onboarding.
 
-## Decision Needed: Desktop Shell
-
-The accepted product direction is "desktop shell first." The remaining architecture decision is which desktop shell to use.
-
-### Option A: Tauri
+## Accepted Decision: Tauri Desktop Shell
 
 Tauri packages a web UI inside a native desktop shell using the operating system's WebView and a Rust backend.
 
-Pros:
+Reasons for choosing Tauri:
 
 - Smaller app bundles than Electron in many cases.
 - Strong security model with explicit permissions and capabilities.
@@ -62,44 +59,14 @@ Pros:
 - Encourages a clean boundary between UI code and privileged native code.
 - Better long-term posture if the app should feel lightweight and native.
 
-Cons:
+Tradeoffs to carry forward:
 
 - Adds Rust and Tauri-specific app architecture.
 - More friction if the app needs heavy Node.js tooling inside the desktop app.
 - Product-link importing with browser automation may require extra design, such as a Node sidecar, external service, or simpler HTTP extraction first.
 - Smaller ecosystem than Electron for some desktop integrations.
 
-### Option B: Electron
-
-Electron packages a Chromium browser and Node.js runtime with the app.
-
-Pros:
-
-- Mature desktop ecosystem.
-- JavaScript and Node can be used across the app shell and local services.
-- Easier first path for local product import, filesystem workflows, image processing, and Playwright-style browser automation.
-- Large community and many examples for local SQLite apps.
-- Faster if we want the prototype to stay mostly TypeScript.
-
-Cons:
-
-- Larger application footprint.
-- Requires careful renderer/main-process security discipline.
-- Can encourage mixing UI, privileged filesystem code, and local service code unless boundaries are enforced.
-- Less lightweight than Tauri.
-
-### Current Lean
-
-This is a genuine tradeoff.
-
-If the first prototype values fast local implementation and product-link import experimentation, Electron is the pragmatic choice.
-
-If the first prototype values a smaller, more native-feeling app and cleaner long-term desktop boundaries, Tauri is the cleaner choice.
-
-My current recommendation is:
-
-- Choose Electron if in-app product importing and TypeScript-only iteration are the highest priorities for the first prototype.
-- Choose Tauri if the desktop shell itself should set the long-term foundation and we are comfortable handling import automation more carefully.
+Electron is deferred unless Tauri blocks a core product requirement.
 
 ## Accepted Decision: Local Single-User Prototype First
 
@@ -178,77 +145,65 @@ For version 1, defer the cloud provider choice. Build local-first, but keep the 
 
 The next cloud decision should happen only after the mannequin, wardrobe, outfit builder, and local persistence loop are working.
 
-## Clarification Needed: ORM And Schema Management
+## Clarification Needed: Local Data Layer
 
-An ORM or query layer is the code that defines the database schema, runs migrations, and gives the app typed access to persisted data.
+Choosing Tauri changes the database decision. The cleanest Tauri architecture does not automatically imply a Node-style TypeScript ORM.
 
-For a desktop-first local prototype, the database should likely be SQLite. The ORM decision should be judged by how well it supports:
+The first prototype should use SQLite, but there are three viable ways to access it.
 
-- Local SQLite development.
-- Clear schema migrations.
-- TypeScript type safety.
-- A future path to cloud Postgres or sync.
-- Packaging inside a desktop app.
+### Option A: Rust-Owned SQLite Commands
 
-### Option A: Drizzle
-
-Drizzle is a TypeScript-first schema and query toolkit that stays close to SQL.
+The Rust side owns SQLite access. The frontend calls Tauri commands such as `list_clothing_items`, `save_body_profile`, and `save_outfit`.
 
 Pros:
 
-- Transparent schema definitions.
-- SQL-like query style.
-- Good fit when we want to understand and control the database shape.
-- Works with SQLite and Postgres.
-- Easier to keep migrations explicit.
-- Good match for measurement tables where schema clarity matters.
+- Clean Tauri boundary.
+- Database access stays out of renderer code.
+- Filesystem and database logic can share one Rust app state.
+- Good fit for sensitive body and wardrobe data.
+- Avoids bundling a Node sidecar just for persistence.
 
 Cons:
 
-- Less abstracted than Prisma.
-- Some app patterns require more explicit SQL thinking.
-- Developer experience can feel more manual.
+- More Rust code.
+- TypeScript DTOs and Rust structs must be kept aligned.
+- Drizzle is not the runtime query layer.
 
-### Option B: Prisma
+Current recommendation: use this for the first prototype.
 
-Prisma uses a schema file to generate a typed client for database access.
+### Option B: Tauri SQL Plugin From Renderer
+
+The frontend uses `@tauri-apps/plugin-sql` to query SQLite directly.
 
 Pros:
 
-- Very polished developer experience.
-- Strong generated client.
-- Excellent documentation and community adoption.
-- Comfortable for fast CRUD-heavy app development.
-- Good local SQLite support for many prototypes.
+- Fastest Tauri-native path for simple CRUD.
+- Official Tauri plugin with SQLite support.
+- Less Rust repository code.
 
 Cons:
 
-- More abstracted from SQL.
-- Future row-level security or advanced SQL policy work may require extra care.
-- Desktop packaging can require attention around generated clients and native engines.
-- Switching between local SQLite and future Postgres may require more migration discipline.
+- Gives renderer-side code database access.
+- Requires discipline to keep SQL out of React components.
+- Weaker boundary for sensitive local data.
 
-### Option C: Lightweight SQL Query Builder
+### Option C: Node Sidecar With Drizzle
 
-Examples: Kysely or carefully organized raw SQL.
+A bundled Node sidecar owns SQLite access using Drizzle.
 
 Pros:
 
-- Very explicit and portable.
-- Minimal abstraction.
-- Strong for local-first apps where SQL clarity matters.
+- Keeps database schema and query logic in TypeScript.
+- Better fit for Drizzle.
+- Can later help if browser automation becomes central to product imports.
 
 Cons:
 
-- More manual schema and migration work.
-- Less of a full batteries-included app data layer.
-- More room for inconsistency if patterns are not enforced.
+- More packaging complexity.
+- Adds a second local backend process.
+- Less Tauri-native than Rust-owned commands.
 
-### Current Lean
-
-My recommendation is Drizzle for the first implementation, because the app needs a clear local schema, measurement-heavy tables, and a plausible future path to Postgres or sync. Prisma is also reasonable if you strongly prefer the generated-client workflow and faster CRUD ergonomics.
-
-This decision should be judged before implementation starts.
+This decision should be judged before scaffolding the app.
 
 ## High-Level System Diagram
 
@@ -285,6 +240,7 @@ Recommended structure:
 apps/
   desktop/
     src/
+    src-tauri/
     public/
 packages/
   domain/
@@ -299,7 +255,7 @@ docs/
 
 Package responsibilities:
 
-- `apps/desktop`: desktop shell, app composition, local service wiring, window behavior.
+- `apps/desktop`: Tauri shell, app composition, local service wiring, window behavior.
 - `packages/domain`: clothing categories, units, confidence models, outfit entities, shared types.
 - `packages/renderer`: React Three Fiber scene, camera controls, mannequin and garment render components.
 - `packages/measurement`: body measurement normalization, mannequin parameter mapping, validation, estimation.
@@ -511,10 +467,11 @@ Future upgrade:
 
 - Move imports to an async local queue or cloud worker if they become slow, flaky, or browser-automation-heavy.
 
-Shell-specific note:
+Tauri-specific note:
 
-- Electron makes local Node and Playwright-style import experiments easier.
-- Tauri may push us toward simple HTTP extraction first, a Node sidecar, or a later import service.
+- Start with simple HTTP extraction from the Rust side.
+- Add a Node sidecar only if browser automation becomes necessary for useful product imports.
+- Prefer a later cloud import worker if imports become slow, flaky, or too dependent on retailer-specific behavior.
 
 ## AI Architecture
 
@@ -628,7 +585,7 @@ Prototype requirements:
 - Seed data for testing body profiles and wardrobe items.
 - Manual export or backup path documented before real personal data is used heavily.
 
-Production desktop distribution is a later decision. It will depend on the desktop shell choice.
+Production desktop distribution is a later decision. It will depend on Tauri packaging, signing, and update requirements.
 
 ## Future Cloud And Mobile Path
 
@@ -658,22 +615,22 @@ To preserve this path:
 - Three.js GLTFLoader: https://threejs.org/docs/pages/GLTFLoader.html
 - Three.js OrbitControls: https://threejs.org/docs/pages/OrbitControls.html
 - Tauri architecture: https://v2.tauri.app/concept/architecture/
+- Tauri frontend-to-Rust commands: https://v2.tauri.app/develop/calling-rust/
 - Tauri sidecars: https://v2.tauri.app/develop/sidecar/
+- Tauri file system plugin: https://v2.tauri.app/plugin/file-system/
+- Tauri SQL plugin: https://v2.tauri.app/plugin/sql/
 - Tauri security: https://v2.tauri.app/security/
 - Tauri capabilities: https://tauri.app/security/capabilities/
-- Electron process model: https://www.electronjs.org/docs/latest/tutorial/process-model
-- Electron security: https://www.electronjs.org/docs/latest/tutorial/security
 - Playwright browser automation docs: https://playwright.dev/docs/pages
 - Playwright browser contexts: https://playwright.dev/docs/browser-contexts
-- Drizzle migrations: https://orm.drizzle.team/docs/migrations
-- Drizzle schema: https://orm.drizzle.team/docs/sql-schema-declaration
-- Prisma SQLite database connector: https://docs.prisma.io/docs/orm/core-concepts/supported-databases/sqlite
+- Drizzle SQLite: https://orm.drizzle.team/docs/sqlite/connect-node-sqlite
 - OpenAI images and vision guide: https://platform.openai.com/docs/guides/images-vision
 - OpenAI structured outputs guide: https://platform.openai.com/docs/guides/structured-outputs
 
 ## Resolved Architecture Decisions
 
 - Build desktop shell first.
+- Use Tauri as the desktop shell.
 - Start local single-user.
 - Use local persistence first.
 - Keep 3D rendering client-side inside the desktop UI.
@@ -685,8 +642,7 @@ To preserve this path:
 
 ## Decisions For User Judgment
 
-1. Desktop shell: Tauri or Electron?
-2. Local database/query layer: Drizzle, Prisma, or a lighter SQL query builder?
-3. Future backend direction: integrated cloud backend, composable cloud backend, or local-first sync?
-4. Product import implementation detail: simple HTTP extraction first, or browser automation early?
-5. Mannequin interaction details from the mannequin contract: live measurement preview, weight handling, and pose scope.
+1. Local database/query layer: Rust-owned SQLite commands, Tauri SQL plugin in the renderer, or a Node sidecar with Drizzle?
+2. Future backend direction: integrated cloud backend, composable cloud backend, or local-first sync?
+3. Product import implementation detail: simple HTTP extraction first, or browser automation early?
+4. Mannequin interaction details from the mannequin contract: live measurement preview, weight handling, and pose scope.

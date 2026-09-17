@@ -29,6 +29,8 @@ This means:
 
 This approach is preferable for version 1 because it is practical, privacy-preserving, and compatible with a desktop 3D environment.
 
+Detailed mannequin appearance requirements live in the Mannequin Visual Design Contract.
+
 ## Required Body Measurements
 
 Accepted version 1 decision: require the full useful measurement set during body profile setup.

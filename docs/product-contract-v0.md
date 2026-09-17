@@ -3,6 +3,7 @@
 ## Related Documents
 
 - [Version 1 Mannequin Contract](mannequin-contract-v0.md)
+- [Mannequin Visual Design Contract](mannequin-visual-design-contract-v0.md)
 - [Version 1 Garment Rendering and Measurement Contract](garment-rendering-contract-v0.md)
 - [Version 1 App Architecture Contract](app-architecture-contract-v0.md)
 - [Technical Architecture Design](technical-architecture-design-v0.md)

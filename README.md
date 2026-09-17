@@ -26,6 +26,7 @@ This repository has its first Tauri/React scaffold. The web preview, split app s
 
 - [Product contract](docs/product-contract-v0.md)
 - [Mannequin contract](docs/mannequin-contract-v0.md)
+- [Mannequin visual design contract](docs/mannequin-visual-design-contract-v0.md)
 - [Garment rendering and measurement contract](docs/garment-rendering-contract-v0.md)
 - [App architecture contract](docs/app-architecture-contract-v0.md)
 - [Technical architecture design](docs/technical-architecture-design-v0.md)

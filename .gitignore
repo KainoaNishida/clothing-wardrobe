@@ -12,6 +12,12 @@ dist/
 build/
 .next/
 coverage/
+.vite/
+target/
+src-tauri/target/
+apps/desktop/src-tauri/target/
+apps/**/.verification/
+.tmp-*.png
 
 # Environment files
 .env

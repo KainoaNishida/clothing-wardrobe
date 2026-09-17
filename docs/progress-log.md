@@ -22,3 +22,4 @@
 - Accepted Tauri as the first desktop shell.
 - Began the initial technical architecture design for a Tauri local desktop prototype.
 - Accepted Rust-owned SQLite behind Tauri commands as the first persistence strategy.
+- Scaffolded the first Tauri/React desktop app structure with a split wardrobe/outfit UI, placeholder 3D mannequin scene, Rust app state, and initial SQLite migration.

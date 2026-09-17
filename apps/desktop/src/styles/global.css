@@ -1,0 +1,383 @@
+:root {
+  color-scheme: dark;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color: #f4f0ea;
+  background: #0a0a0a;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 0;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  border: 0;
+}
+
+.app-shell {
+  display: grid;
+  grid-template-columns: minmax(360px, 28vw) minmax(720px, 1fr);
+  height: 100vh;
+  background: #050505;
+}
+
+.catalogue-pane {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 18px;
+  border-right: 1px solid #24211d;
+  background: #11100f;
+  padding: 22px;
+}
+
+.app-header,
+.action-row,
+.panel-heading,
+.viewer-toolbar {
+  display: flex;
+  align-items: center;
+}
+
+.app-header {
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.eyebrow {
+  margin: 0 0 4px;
+  color: #b7afa2;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+h1,
+h2 {
+  margin: 0;
+  letter-spacing: 0;
+}
+
+h1 {
+  font-size: 1.45rem;
+  line-height: 1.1;
+}
+
+h2 {
+  font-size: 0.92rem;
+}
+
+.status-pill,
+.primary-action,
+.icon-action,
+.category-tab,
+.view-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 36px;
+  border: 1px solid #34302a;
+  color: #f4f0ea;
+  background: #1b1916;
+}
+
+.status-pill {
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 999px;
+  color: #d9d0c3;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.status-pill.is-ready {
+  border-color: #315d49;
+  color: #aee3c6;
+  background: #10251b;
+}
+
+.action-row {
+  gap: 10px;
+}
+
+.primary-action,
+.icon-action,
+.category-tab,
+.view-button,
+.wardrobe-item,
+.idea-card {
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.primary-action {
+  flex: 1;
+  border-radius: 8px;
+  background: #e4ddd0;
+  color: #15110c;
+  font-weight: 800;
+}
+
+.icon-action {
+  width: 42px;
+  border-radius: 8px;
+}
+
+.primary-action:hover,
+.icon-action:hover,
+.category-tab:hover,
+.view-button:hover,
+.wardrobe-item:hover,
+.idea-card:hover {
+  transform: translateY(-1px);
+}
+
+.wardrobe-panel {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.search-field {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 42px;
+  border: 1px solid #34302a;
+  border-radius: 8px;
+  background: #171512;
+  color: #9c9487;
+  padding: 0 12px;
+}
+
+.search-field input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #f4f0ea;
+}
+
+.search-field input::placeholder {
+  color: #857c70;
+}
+
+.category-tabs {
+  display: flex;
+  gap: 7px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.category-tab {
+  flex: 0 0 auto;
+  min-width: 58px;
+  border-radius: 999px;
+  padding: 0 12px;
+  color: #cfc7ba;
+  font-size: 0.82rem;
+}
+
+.category-tab.is-active,
+.view-button.is-active {
+  border-color: #c48f52;
+  color: #ffe2bb;
+  background: #2a1c0f;
+}
+
+.wardrobe-list {
+  display: grid;
+  min-height: 0;
+  gap: 9px;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.wardrobe-item,
+.idea-card {
+  border: 1px solid #2c2823;
+  border-radius: 8px;
+  background: #171512;
+  color: #f4f0ea;
+  text-align: left;
+}
+
+.wardrobe-item {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 68px;
+  padding: 10px;
+}
+
+.wardrobe-item.is-selected {
+  border-color: #c48f52;
+  background: #21180f;
+}
+
+.item-swatch {
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgb(255 255 255 / 14%);
+  border-radius: 8px;
+}
+
+.item-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.item-copy strong,
+.idea-card span {
+  overflow: hidden;
+  font-size: 0.92rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.item-copy small,
+.idea-card small {
+  overflow: hidden;
+  color: #a79d90;
+  font-size: 0.78rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.item-size {
+  color: #d4c5b2;
+  font-size: 0.78rem;
+}
+
+.ideas-panel {
+  display: grid;
+  gap: 10px;
+}
+
+.panel-heading {
+  gap: 8px;
+  color: #d9d0c3;
+}
+
+.idea-list {
+  display: grid;
+  gap: 8px;
+}
+
+.idea-card {
+  display: grid;
+  gap: 3px;
+  padding: 10px 12px;
+}
+
+.viewer-pane {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  background: #020202;
+}
+
+.viewer-toolbar {
+  position: absolute;
+  z-index: 2;
+  top: 18px;
+  right: 18px;
+  gap: 8px;
+}
+
+.view-button {
+  min-width: 78px;
+  border-radius: 8px;
+  padding: 0 10px;
+  text-transform: capitalize;
+}
+
+.scene-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+@media (max-width: 900px) {
+  body {
+    overflow: auto;
+  }
+
+  .app-shell {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(520px, 60vh);
+    min-height: 100vh;
+    height: auto;
+  }
+
+  .catalogue-pane {
+    border-right: 0;
+    border-bottom: 1px solid #24211d;
+    min-height: auto;
+    padding: 16px;
+  }
+
+  .app-header {
+    align-items: flex-start;
+  }
+
+  .action-row {
+    flex-wrap: wrap;
+  }
+
+  .primary-action {
+    min-width: min(100%, 220px);
+  }
+
+  .viewer-pane {
+    min-height: 520px;
+  }
+
+  .wardrobe-panel {
+    flex: none;
+    min-height: auto;
+  }
+
+  .wardrobe-list {
+    overflow: visible;
+  }
+
+  .viewer-toolbar {
+    left: 12px;
+    right: 12px;
+    flex-wrap: wrap;
+  }
+
+  .view-button {
+    min-width: 0;
+    flex: 1 1 92px;
+  }
+}

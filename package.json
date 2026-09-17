@@ -1,0 +1,17 @@
+{
+  "name": "clothing-wardrobe",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm --workspace apps/desktop run tauri:dev",
+    "dev:web": "npm --workspace apps/desktop run dev",
+    "build": "npm --workspace apps/desktop run build",
+    "typecheck": "npm --workspace apps/desktop run typecheck",
+    "lint": "npm run typecheck",
+    "test": "npm run typecheck"
+  }
+}

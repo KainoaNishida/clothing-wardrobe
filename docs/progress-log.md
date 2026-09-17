@@ -12,3 +12,4 @@
 - Accepted dominant colors plus simple pattern labels for version 1.
 - Accepted public product-page imports only for version 1.
 - Accepted the full useful body measurement set for version 1 onboarding.
+- Added the version 1 app architecture contract.

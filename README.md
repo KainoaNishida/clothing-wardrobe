@@ -24,6 +24,7 @@ This repository is in product-contract and architecture-discovery mode. No appli
 - [Product contract](docs/product-contract-v0.md)
 - [Mannequin contract](docs/mannequin-contract-v0.md)
 - [Garment rendering and measurement contract](docs/garment-rendering-contract-v0.md)
+- [App architecture contract](docs/app-architecture-contract-v0.md)
 
 ## Next Planning Areas
 

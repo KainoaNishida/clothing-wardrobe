@@ -4,6 +4,7 @@
 
 - [Version 1 Mannequin Contract](mannequin-contract-v0.md)
 - [Version 1 Garment Rendering and Measurement Contract](garment-rendering-contract-v0.md)
+- [Version 1 App Architecture Contract](app-architecture-contract-v0.md)
 
 ## Product Summary
 

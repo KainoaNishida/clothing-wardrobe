@@ -6,6 +6,8 @@ This contract defines what the version 1 mannequin should look and feel like.
 
 The mannequin should communicate body proportion and clothing silhouette without becoming a realistic avatar. It should help the user answer: "Does this outfit work on a body shaped like mine?" It should not try to answer: "Does this look exactly like me?"
 
+Reference-derived visual notes are tracked in `docs/reference/mannequin-visual-reference-notes-v1.md`.
+
 ## Visual Direction
 
 Version 1 should use an abstract fitting form.

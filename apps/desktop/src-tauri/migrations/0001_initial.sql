@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS body_profiles (
   id TEXT PRIMARY KEY,
   display_name TEXT,
   unit_system TEXT NOT NULL DEFAULT 'metric',
+  template_id TEXT NOT NULL DEFAULT 'average_average',
   height_cm REAL,
   measurement_completeness TEXT NOT NULL DEFAULT 'draft',
   created_at INTEGER NOT NULL,

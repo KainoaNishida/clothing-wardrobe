@@ -11,6 +11,8 @@ pub enum AppError {
     Tauri(#[from] tauri::Error),
     #[error("application state error: {0}")]
     State(String),
+    #[error("validation error: {0}")]
+    Validation(String),
 }
 
 impl Serialize for AppError {
